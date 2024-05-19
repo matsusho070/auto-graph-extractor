@@ -4,10 +4,6 @@ import subprocess
 from langchain.pydantic_v1 import BaseModel, Field
 
 
-class CommandResult(TypedDict):
-    stdout: str
-    stderr: str
-
 class EventCreationArguments(BaseModel):
     events: List[str] = Field(description="The list events to register")
 

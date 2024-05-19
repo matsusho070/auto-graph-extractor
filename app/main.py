@@ -4,7 +4,8 @@ import sys
 from langsmith import Client
 from langchain_openai import ChatOpenAI
 from tools.event_creation_tool import EventCreationTool
-from tools.review_tool import Reviewer
+from tools.relationship_registration_tool import RelationshipResgirstrationTool
+from tools.review_tool import EventReviewer
 from langchain_core.messages import HumanMessage, SystemMessage
 from util import create_prompt_from_template, ask_task
 from langchain.cache import SQLiteCache
@@ -26,12 +27,25 @@ def main(use_cache, article_text, model_name):
     existing_event_list = ["地震", "台風", "洪水", "火事"]
     event_creation_tool = EventCreationTool()
 
-    tools = [event_creation_tool, Reviewer(llm, article_text)]
+    tools = [event_creation_tool, EventReviewer(llm, article_text)]
     ask_task(llm, tools, create_prompt_from_template("extract_events.jinja",
                                                      article=article_text,
                                                       existing_event_list="\n".join(list(map(lambda event_str: '* ' + event_str, existing_event_list)))))
 
     print("events:" , event_creation_tool.events)
+
+
+    relation_registration_tool = RelationshipResgirstrationTool()
+
+    tools = [relation_registration_tool]
+
+    ask_task(llm, tools, create_prompt_from_template("extract_relationships.jinja",
+                                                     article=article_text,
+                                                     events=event_creation_tool.events))
+
+
+    print("relationships:", relation_registration_tool.relationships)
+
     return
     
 
