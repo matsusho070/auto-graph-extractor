@@ -1,5 +1,6 @@
 import os
 import openai
+import sys
 from langsmith import Client
 from langchain_openai import ChatOpenAI
 from tools.event_creation_tool import EventCreationTool
@@ -40,7 +41,6 @@ if __name__ == "__main__":
     parser.add_argument('--model_name', type=str, default="gpt-4o", help='Model name')
     args = parser.parse_args()
     # Read from stdin
-    article_text = input("Enter article text: ")
-
+    article_text = sys.stdin.read()
 
     main(not args.no_cache, article_text, args.model_name)
