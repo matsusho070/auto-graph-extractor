@@ -1,0 +1,67 @@
+  .extraction-bubble {
+    background-color: #3184ff;
+    color: white;
+    border-radius: 25px;
+    padding: 2px 18px 2px 18px;
+    white-space: nowrap;
+    z-index: 1000;
+  }
+  
+  .extraction-bubble:hover {
+    opacity: 0.3;
+  }
+  
+  .extracted-line {
+    background-color: #3E5270;
+    border-radius: 5px;
+    padding: 5px;
+  }
+
+  .CodeMirror {
+    height: calc(100vh - 300px);
+    background-color: #31353e;
+    padding: 15px;
+    border-radius: 5px;
+  }
+  
+  .CodeMirror span {
+    color: white !important;
+  }
+  
+  .CodeMirror .CodeMirror-cursor {
+    border-left: 1px solid #fff;
+  }
+  
+  .CodeMirror-placeholder {
+    color: #4a535c !important;
+  }
+  
+  .btn {
+    padding-left: 10px;
+    padding-right: 17px;
+    border-radius: 35px;
+  }
+  
+  .btn span {
+    vertical-align: middle;
+    font-size: normal;
+    margin-left: -5px;
+  }
+  
+  .btn#extract-modeless-clear-btn {
+    padding: 0px;
+    border-radius: 0px;
+    margin-right: auto !important;
+  }
+  
+  .btn#extract-modeless-clear-btn img {
+    height: 12px;
+  }
+  
+  .btn#extract-modeless-clear-btn span {
+    margin-left: 0px;
+  }
+  
+  #lineCanvas {
+    z-index:10001;
+  }
