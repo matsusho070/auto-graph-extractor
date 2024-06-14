@@ -75,13 +75,14 @@ def ask_task(
             messages.append(response)
 
             if "tool_calls" in response.additional_kwargs:
+                to_be_terminated = False
                 for tool_call in response.additional_kwargs["tool_calls"]:
                     tool_name = tool_call["function"]["name"]
                     tool_args = json.loads(tool_call["function"]["arguments"])
                     tool = next(filter(lambda t: t.name == tool_name, tools))
                     result = tool._run(**tool_args)
                     if hasattr(tool, "terminate_agent") and tool.terminate_agent:
-                        return result
+                        to_be_terminated = True
                     else:
                         new_messages = [
                             {
@@ -93,6 +94,8 @@ def ask_task(
                         ]
                         print_messages(new_messages)
                         messages = messages + new_messages
+                if to_be_terminated:
+                    return response
             else:
                 return response
     except Exception as e:
