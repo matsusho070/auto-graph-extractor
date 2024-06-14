@@ -3,9 +3,12 @@ from typing import TypedDict, Type, List
 import subprocess
 from langchain.pydantic_v1 import BaseModel, Field
 
+class EventExtraction(BaseModel):
+    event_name: str = Field(description="The name of the event")
+    original_phrase: str = Field(description="The original phrase in the original article where the event is mentioned")
 
 class EventCreationArguments(BaseModel):
-    events: List[str] = Field(description="The list events to register")
+    events: List[EventExtraction] = Field(description="The list of extraction of events from the text.")
 
 
 class EventCreationTool(BaseTool):

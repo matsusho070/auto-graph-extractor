@@ -1,5 +1,6 @@
 import os
 import openai
+import json
 import sys
 from langsmith import Client
 from langchain_openai import ChatOpenAI
@@ -16,8 +17,9 @@ from langchain_core.prompts import ChatPromptTemplate
 
 
 
-def main(use_cache, article_text, model_name):
-    set_llm_cache(SQLiteCache(database_path=".langchain.db"))
+def main(use_cache, article_text, model_name, target_file):
+    if(use_cache):
+        set_llm_cache(SQLiteCache(database_path=".langchain.db"))
 
     # Initialize Lang Smith
     client = Client()
@@ -32,7 +34,7 @@ def main(use_cache, article_text, model_name):
                                                      article=article_text,
                                                       existing_event_list="\n".join(list(map(lambda event_str: '* ' + event_str, existing_event_list)))))
 
-    print("events:" , event_creation_tool.events)
+    print("events:" , event_creation_tool.events, file=sys.stderr)
 
 
     relation_registration_tool = RelationshipResgirstrationTool()
@@ -41,10 +43,34 @@ def main(use_cache, article_text, model_name):
 
     ask_task(llm, tools, create_prompt_from_template("extract_relationships.jinja",
                                                      article=article_text,
-                                                     events=event_creation_tool.events))
+                                                     events=list(map(lambda event: event["event_name"], event_creation_tool.events))))
 
 
-    print("relationships:", relation_registration_tool.relationships)
+    print("relationships:", relation_registration_tool.relationships, file=sys.stderr)
+
+    # Create image that shows the original article and the extracted events and relationships
+    
+    nodes = list(map(lambda event: {"id": event["event_name"],
+                                    "labels": [],
+                                    "properties": {},
+                                     "original_phrase": event["original_phrase"]}, event_creation_tool.events))
+
+    print(json.dumps({
+        "article": article_text,
+        "nodes": nodes,
+        "edges": list(map(lambda relation: {"from": relation[0],
+                                             "to": relation[1],
+                                             "labels": [],
+                                                "properties": {},
+                                             }, relation_registration_tool.relationships))
+    }, ensure_ascii=False, indent=2), file=target_file)
+    
+    print(json.dumps({
+        "nodes": list(map(lambda event: event["event_name"], event_creation_tool.events)),
+        "edges": list(map(lambda relation: {"from": relation[0],
+                                             "to": relation[1],
+                                             }, relation_registration_tool.relationships))
+    }, ensure_ascii=False, indent=2), file=open("output_log.json", "w"))
 
     return
     
@@ -53,8 +79,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process workspace directory')
     parser.add_argument('--no_cache', action='store_true', help='Invalidate cache')
     parser.add_argument('--model_name', type=str, default="gpt-4o", help='Model name')
+    parser.add_argument('-o', type=str, default="output.json", help='The output file name')
     args = parser.parse_args()
     # Read from stdin
     article_text = sys.stdin.read()
 
-    main(not args.no_cache, article_text, args.model_name)
+    target_file = open(args.o, "w")
+    main(not args.no_cache, article_text, args.model_name, target_file)
