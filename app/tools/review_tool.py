@@ -27,3 +27,28 @@ class EventReviewer(BaseTool):
         response = ask_task(self.llm, [], create_prompt_from_template("review_events.jinja", article=self.article, events=events))
         return response.content
 
+
+class Relationship(TypedDict):
+    source: str = Field(description="The name of the event that is the source of the relationship")
+    target: str = Field(description="The name of the event that is the target of the relationship")
+
+class RelationshipReviewArguments(BaseModel):
+    relationships: List[Relationship] = Field(description="The list of extracted relationships")
+
+class RelationshipReviewer(BaseTool):
+    name: str = "relationship_reviewer"
+    description: str = "A tool to register extracted relationships to database."
+    args_schema: Type[BaseModel] = RelationshipReviewArguments
+
+    class Config:
+      extra = Extra.allow
+
+    def __init__(self, llm, article):
+        super().__init__()
+        self.llm = llm
+        self.article = article
+
+    def _run(self, *args, **kwargs) -> None:
+        relationships = kwargs["relationships"]
+        response = ask_task(self.llm, [], create_prompt_from_template("review_relationships.jinja", article=self.article, relationships=relationships))
+        return response.content

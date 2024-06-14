@@ -6,7 +6,7 @@ from langsmith import Client
 from langchain_openai import ChatOpenAI
 from tools.event_creation_tool import EventCreationTool
 from tools.relationship_registration_tool import RelationshipResgirstrationTool
-from tools.review_tool import EventReviewer
+from tools.review_tool import EventReviewer, RelationshipReviewer
 from langchain_core.messages import HumanMessage, SystemMessage
 from util import create_prompt_from_template, ask_task
 from langchain.cache import SQLiteCache
@@ -39,7 +39,7 @@ def main(use_cache, article_text, model_name, target_file):
 
     relation_registration_tool = RelationshipResgirstrationTool()
 
-    tools = [relation_registration_tool]
+    tools = [relation_registration_tool, RelationshipReviewer(llm, article_text)]
 
     ask_task(llm, tools, create_prompt_from_template("extract_relationships.jinja",
                                                      article=article_text,
