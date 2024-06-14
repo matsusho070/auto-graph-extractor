@@ -5,8 +5,8 @@ import sys
 from langsmith import Client
 from langchain_openai import ChatOpenAI
 from tools.event_creation_tool import EventCreationTool
-from tools.relationship_registration_tool import RelationshipResgirstrationTool
-from tools.review_tool import EventReviewer, RelationshipReviewer
+from tools.relation_registration_tool import RelationResgirstrationTool
+from tools.review_tool import EventReviewer, RelationReviewer
 from langchain_core.messages import HumanMessage, SystemMessage
 from util import create_prompt_from_template, ask_task
 from langchain.cache import SQLiteCache
@@ -37,18 +37,18 @@ def main(use_cache, article_text, model_name, target_file):
     print("events:" , event_creation_tool.events, file=sys.stderr)
 
 
-    relation_registration_tool = RelationshipResgirstrationTool()
+    relation_registration_tool = RelationResgirstrationTool()
 
-    tools = [relation_registration_tool, RelationshipReviewer(llm, article_text)]
+    tools = [relation_registration_tool, RelationReviewer(llm, article_text)]
 
-    ask_task(llm, tools, create_prompt_from_template("extract_relationships.jinja",
+    ask_task(llm, tools, create_prompt_from_template("extract_relations.jinja",
                                                      article=article_text,
                                                      events=list(map(lambda event: event["event_name"], event_creation_tool.events))))
 
 
-    print("relationships:", relation_registration_tool.relationships, file=sys.stderr)
+    print("relations:", relation_registration_tool.relations, file=sys.stderr)
 
-    # Create image that shows the original article and the extracted events and relationships
+    # Create image that shows the original article and the extracted events and relations
     
     nodes = list(map(lambda event: {"id": event["event_name"],
                                     "labels": [],
@@ -62,14 +62,14 @@ def main(use_cache, article_text, model_name, target_file):
                                              "to": relation[1],
                                              "labels": [],
                                                 "properties": {},
-                                             }, relation_registration_tool.relationships))
+                                             }, relation_registration_tool.relations))
     }, ensure_ascii=False, indent=2), file=target_file)
     
     print(json.dumps({
         "nodes": list(map(lambda event: event["event_name"], event_creation_tool.events)),
         "edges": list(map(lambda relation: {"from": relation[0],
                                              "to": relation[1],
-                                             }, relation_registration_tool.relationships))
+                                             }, relation_registration_tool.relations))
     }, ensure_ascii=False, indent=2), file=open("output_log.json", "w"))
 
     return

@@ -8,7 +8,6 @@ import sys
 from langsmith import Client
 from langchain_openai import ChatOpenAI
 from tools.score_registration_tool import ScoreRegistrationTool
-from tools.relationship_registration_tool import RelationshipResgirstrationTool
 from tools.review_tool import EventReviewer
 from langchain_core.messages import HumanMessage, SystemMessage
 from util import create_prompt_from_template, ask_task

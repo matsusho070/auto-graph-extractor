@@ -28,17 +28,17 @@ class EventReviewer(BaseTool):
         return response.content
 
 
-class Relationship(TypedDict):
-    source: str = Field(description="The name of the event that is the source of the relationship")
-    target: str = Field(description="The name of the event that is the target of the relationship")
+class Relation(TypedDict):
+    source: str = Field(description="The name of the event that is the source of the relation")
+    target: str = Field(description="The name of the event that is the target of the relation")
 
-class RelationshipReviewArguments(BaseModel):
-    relationships: List[Relationship] = Field(description="The list of extracted relationships")
+class RelationReviewArguments(BaseModel):
+    relations: List[Relation] = Field(description="The list of extracted relations")
 
-class RelationshipReviewer(BaseTool):
-    name: str = "relationship_reviewer"
-    description: str = "A tool to register extracted relationships to database."
-    args_schema: Type[BaseModel] = RelationshipReviewArguments
+class RelationReviewer(BaseTool):
+    name: str = "relation_reviewer"
+    description: str = "A tool to register extracted relations to database."
+    args_schema: Type[BaseModel] = RelationReviewArguments
 
     class Config:
       extra = Extra.allow
@@ -49,6 +49,6 @@ class RelationshipReviewer(BaseTool):
         self.article = article
 
     def _run(self, *args, **kwargs) -> None:
-        relationships = kwargs["relationships"]
-        response = ask_task(self.llm, [], create_prompt_from_template("review_relationships.jinja", article=self.article, relationships=relationships))
+        relations = kwargs["relations"]
+        response = ask_task(self.llm, [], create_prompt_from_template("review_relations.jinja", article=self.article, relations=relations))
         return response.content
