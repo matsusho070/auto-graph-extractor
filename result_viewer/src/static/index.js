@@ -64,21 +64,51 @@ function updateExtractedGraph(name) {
   })
     .then((response) => response.json())
     .then((graph) => {
+      document.getElementById("original-json").textContent = JSON.stringify(
+        graph,
+        null,
+        2
+      );
       extractionEditor.setValue(graph.article);
       clearExtractionHighlights();
       const markerMap = {};
+      let occupiedRanges = [];
       for (let node of graph.nodes) {
         let cursor = extractionEditor.getSearchCursor(node.original_phrase);
         if (cursor.findNext()) {
+          let { line: bubbleStartLine, ch: bubbleStartCh } = cursor.from();
+          let overlapped = null;
+          while (
+            (overlapped = occupiedRanges.find(
+              ({ startLine, startCh, text }) =>
+                bubbleStartLine === startLine &&
+                Math.abs(bubbleStartCh - startCh) < text.length + node.id.length
+            ))
+          ) {
+            bubbleStartCh += overlapped.text.length + node.id.length;
+            console.log("Occupied range, moving to", bubbleStartCh);
+          }
           extractionMarkers.push(
             extractionEditor.markText(cursor.from(), cursor.to(), {
               className: "extracted-line",
             })
           );
+          occupiedRanges.push({
+            startLine: bubbleStartLine,
+            startCh: bubbleStartCh,
+            text: node.id,
+          });
           let bubble = document.createElement("div");
           bubble.innerText = node.id;
           bubble.className = "extraction-bubble";
-          extractionEditor.addWidget(cursor.from(), bubble, false);
+          extractionEditor.addWidget(
+            {
+              line: bubbleStartLine,
+              ch: bubbleStartCh,
+            },
+            bubble,
+            false
+          );
           extractionWidgets.push(bubble);
           markerMap[node.id] = bubble;
           setMarginForExtractionWidget(bubble);

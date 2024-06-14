@@ -18,7 +18,8 @@
   }
 
   .CodeMirror {
-    height: calc(100vh - 300px);
+    height: 100%;
+    width: 90%;
     background-color: #31353e;
     padding: 15px;
     border-radius: 5px;
