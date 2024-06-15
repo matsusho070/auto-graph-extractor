@@ -24,7 +24,8 @@ class EventReviewer(BaseTool):
 
     def _run(self, *args, **kwargs) -> str:
         events = kwargs["events"]
-        response = ask_task(self.llm, [], create_prompt_from_template("review_events.jinja", article=self.article, events=events))
+        message_history = kwargs["message_history"]
+        response = ask_task(self.llm, [], create_prompt_from_template("review_events.jinja", article=self.article, events=events), message_history)
         return response.content
 
 
@@ -50,5 +51,5 @@ class RelationReviewer(BaseTool):
 
     def _run(self, *args, **kwargs) -> None:
         relations = kwargs["relations"]
-        response = ask_task(self.llm, [], create_prompt_from_template("review_relations.jinja", article=self.article, relations=relations))
-        return response.content
+        messages = ask_task(self.llm, [], create_prompt_from_template("review_relations.jinja", article=self.article, relations=relations))
+        return messages[-1].content

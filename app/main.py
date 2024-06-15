@@ -4,6 +4,7 @@ import json
 import sys
 from langsmith import Client
 from langchain_openai import ChatOpenAI
+from tools.registration_tool import RegistrationTool
 from tools.event_creation_tool import EventCreationTool
 from tools.relation_registration_tool import RelationResgirstrationTool
 from tools.review_tool import EventReviewer, RelationReviewer
@@ -29,10 +30,25 @@ def main(use_cache, article_text, model_name, target_file, golden_answer_file):
     existing_event_list = ["地震", "台風", "洪水", "火事"]
     event_creation_tool = EventCreationTool()
 
-    tools = [event_creation_tool, EventReviewer(llm, article_text)]
-    ask_task(llm, tools, create_prompt_from_template("extract_events.jinja",
-                                                     article=article_text,
-                                                      existing_event_list="\n".join(list(map(lambda event_str: '* ' + event_str, existing_event_list)))))
+    messages = []
+
+    registration_tool = RegistrationTool()
+    review_count = 0
+    while True:
+        messages = ask_task(llm, [], create_prompt_from_template("extract_events.jinja",
+                                                        article=article_text,
+                                                        existing_event_list="\n".join(list(map(lambda event_str: '* ' + event_str, existing_event_list))),
+                                                        ), messages, use_cache)
+
+        messages = ask_task(llm, [registration_tool], 
+                            create_prompt_from_template("review_events.jinja"),
+                             messages, use_cache=use_cache)
+        review_count += 1
+        if registration_tool.terminated or review_count >= 5:
+            break
+        
+    
+    ask_task(llm, [event_creation_tool], create_prompt_from_template("conclude_extraction.jinja"), messages, use_cache)
 
     print("events:" , event_creation_tool.events, file=sys.stderr)
 
@@ -85,10 +101,10 @@ if __name__ == "__main__":
     parser.add_argument('--no_cache', action='store_true', help='Invalidate cache')
     parser.add_argument('--model_name', type=str, default="gpt-4o", help='Model name')
     parser.add_argument('--golden-answer', type=str, help='The file containing the golden answer')
+    parser.add_argument('-i', '--input-file', type=str, help='The input article file name')
     parser.add_argument('-o', '--output-file', type=str, default="output.json", help='The output file name')
     args = parser.parse_args()
-    # Read from stdin
-    article_text = sys.stdin.read()
+    article_text = open(args.input_file, "r").read()
 
     target_file = open(args.output_file, "w")
     main(not args.no_cache, article_text, args.model_name, target_file, args.golden_answer)

@@ -51,17 +51,22 @@ def print_messages(messages):
 
 
 def ask_task(
-        llm: BaseChatModel, tools: List[BaseTool], task_description: str, use_cache: bool = True
+        llm: BaseChatModel, tools: List[BaseTool], task_description: str, existing_messages = None, use_cache: bool = True
 ):
+    
+    if existing_messages:
+        messages = existing_messages
+    else:
+        messages = []
 
-    messages = [
-        {
+    task_description_message = {
             "role": "user",
             "content": task_description,
-        },
-    ]    
+        }
+    
+    messages.append(task_description_message)
+    print_messages([task_description_message])
 
-    print_messages(messages)
     try:
         while True:
             if tools is not None and len(tools) > 0:
@@ -81,23 +86,24 @@ def ask_task(
                     tool_args = json.loads(tool_call["function"]["arguments"])
                     tool = next(filter(lambda t: t.name == tool_name, tools))
                     result = tool._run(**tool_args)
+
+                    new_messages = [
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call["id"],
+                            "name": tool_name,
+                            "content": json.dumps(result, ensure_ascii=False)
+                        }
+                    ]
+                    print_messages(new_messages)
+                    messages = messages + new_messages
+                
                     if hasattr(tool, "terminate_agent") and tool.terminate_agent:
                         to_be_terminated = True
-                    else:
-                        new_messages = [
-                            {
-                                "role": "tool",
-                                "tool_call_id": tool_call["id"],
-                                "name": tool_name,
-                                "content": json.dumps(result, ensure_ascii=False)
-                            }
-                        ]
-                        print_messages(new_messages)
-                        messages = messages + new_messages
                 if to_be_terminated:
-                    return response
+                    return messages
             else:
-                return response
+                return messages
     except Exception as e:
         print(f"The request to OpenAI API failed. Here is the error message:")
         print(e)

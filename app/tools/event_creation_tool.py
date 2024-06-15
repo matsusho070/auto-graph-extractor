@@ -19,5 +19,6 @@ class EventCreationTool(BaseTool):
     events = []
 
     def _run(self, *args, **kwargs) -> None:
-        self.events = kwargs["events"]
+        event_names = list(map(lambda event: event["event_name"], self.events))
+        self.events += list(filter(lambda event: event["event_name"] not in event_names, kwargs["events"]))
         return None
