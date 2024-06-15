@@ -14,10 +14,10 @@ from langchain.globals import set_llm_cache
 import argparse
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
+from sqc_score import calc_sqc_score
 
 
-
-def main(use_cache, article_text, model_name, target_file):
+def main(use_cache, article_text, model_name, target_file, golden_answer_file):
     if(use_cache):
         set_llm_cache(SQLiteCache(database_path=".langchain.db"))
 
@@ -65,12 +65,17 @@ def main(use_cache, article_text, model_name, target_file):
                                              }, relation_registration_tool.relations))
     }, ensure_ascii=False, indent=2), file=target_file)
     
+    event_names = list(map(lambda event: event["event_name"], event_creation_tool.events))
     print(json.dumps({
-        "nodes": list(map(lambda event: event["event_name"], event_creation_tool.events)),
+        "nodes": event_names,
         "edges": list(map(lambda relation: {"from": relation[0],
                                              "to": relation[1],
                                              }, relation_registration_tool.relations))
     }, ensure_ascii=False, indent=2), file=open("output_log.json", "w"))
+
+    if golden_answer_file:
+        golden_answer = json.load(open(golden_answer_file, 'r')) 
+        calc_sqc_score(use_cache, article_text, {"nodes": event_names}, golden_answer)
 
     return
     
@@ -79,10 +84,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process workspace directory')
     parser.add_argument('--no_cache', action='store_true', help='Invalidate cache')
     parser.add_argument('--model_name', type=str, default="gpt-4o", help='Model name')
-    parser.add_argument('-o', type=str, default="output.json", help='The output file name')
+    parser.add_argument('--golden-answer', type=str, help='The file containing the golden answer')
+    parser.add_argument('-o', '--output-file', type=str, default="output.json", help='The output file name')
     args = parser.parse_args()
     # Read from stdin
     article_text = sys.stdin.read()
 
-    target_file = open(args.o, "w")
-    main(not args.no_cache, article_text, args.model_name, target_file)
+    target_file = open(args.output_file, "w")
+    main(not args.no_cache, article_text, args.model_name, target_file, args.golden_answer)

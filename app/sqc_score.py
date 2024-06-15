@@ -16,7 +16,7 @@ from langchain.globals import set_llm_cache
 import argparse
 from langchain_core.prompts import ChatPromptTemplate
 
-def main(use_cache, article_text, extraction_result, golden_answer):
+def calc_sqc_score(use_cache, article_text, extraction_result, golden_answer):
     if(use_cache):
         set_llm_cache(SQLiteCache(database_path=".langchain.db"))
 
@@ -65,4 +65,4 @@ if __name__ == "__main__":
         print("Error: extraction_result includes non-unique nodes", file=sys.stderr)
         sys.exit(1)
     
-    main(not args.no_cache, article_text, extraction_result, golden_answer)
+    calc_sqc_score(not args.no_cache, article_text, extraction_result, golden_answer)
